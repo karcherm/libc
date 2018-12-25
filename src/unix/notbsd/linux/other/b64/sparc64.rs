@@ -1,6 +1,7 @@
 //! SPARC64-specific definitions for 64-bit linux-like values
 
 use pthread_mutex_t;
+use sigset_t;
 
 pub type c_long = i64;
 pub type c_ulong = u64;
@@ -9,6 +10,7 @@ pub type wchar_t = i32;
 pub type nlink_t = u32;
 pub type blksize_t = i64;
 pub type suseconds_t = i32;
+pub type mc_greg_t = u64;
 pub type __u64 = ::c_ulonglong;
 
 s! {
@@ -141,6 +143,44 @@ s! {
         pub c_ispeed: ::speed_t,
         pub c_ospeed: ::speed_t,
     }
+
+    //pub union __fpu_t_fregs {
+    //    pub sregs: [::c_uint; 32],
+    //    pub dregs: [::c_ulong; 32],
+    //    // Actually long double, but that type doesn't exist
+    //    pub qregs: [i128; 16],
+    //}
+
+    #[repr(align(16))]
+    pub struct mc_fpu_t {
+        //pub __mcfpu_fregs: __fpu_t_fregs,
+        __mcfpu_fregs: [::c_ulong; 32],
+        pub mcfpu_fsr: ::c_ulong,
+        pub mcfpu_fprs: ::c_ulong,
+        pub mcfpu_gsr: ::c_ulong,
+        //pub mcfpu_fq: *mut ::c_void,
+        __mcfpu_fq: u64,
+        pub mcfpu_qcnt: ::c_uchar,
+        pub mcfpu_qentsz: ::c_uchar,
+        pub mcfpu_enab: ::c_uchar,
+    }
+
+    pub struct mcontext_t {
+        pub mc_gregs: [mc_greg_t; 19],
+        pub mc_fp: mc_greg_t,
+        pub mc_i7: mc_greg_t,
+        pub mc_fpregs: mc_fpu_t,
+    }
+
+    pub struct ucontext_t {
+        pub uc_link: *mut ucontext_t,
+        pub uc_flags: ::c_ulong,
+        __uc_sigmask: ::c_ulong,
+        pub uc_mcontext: mcontext_t,
+        pub uc_stack: ::stack_t,
+        pub uc_sigmask: sigset_t,
+    }
+
 }
 
 pub const __SIZEOF_PTHREAD_RWLOCK_T: usize = 56;
